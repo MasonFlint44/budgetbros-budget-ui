@@ -1,0 +1,26 @@
+{
+  "name": "Angular Dev",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "Angular.ng-template",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-vscode.vscode-typescript-next",
+        "openai.chatgpt",
+      ]
+    }
+  },
+  "forwardPorts": [4200],
+  "portsAttributes": {
+    "4200": {
+      "label": "Angular Dev Server"
+    }
+  },
+  "remoteUser": "node",
+  "postCreateCommand": "if [ -f package.json ]; then npm install; fi",
+  "postStartCommand": "if [ -f angular.json ]; then echo 'Angular project detected. Start with: npm start or ng serve --host 0.0.0.0 --port 4200'; fi"
+}
