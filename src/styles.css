@@ -1,3 +1,103 @@
 /* You can add global styles to this file, and also import other style files */
 
 @import "tailwindcss";
+@plugin "daisyui" {
+  themes: corporate;
+}
+
+@plugin "daisyui/theme" {
+  name: "budgetbros";
+  default: true;
+  prefersdark: true;
+  color-scheme: dark;
+
+  --color-base-100: oklch(24% 0.02 164);
+  --color-base-200: oklch(20% 0.018 164);
+  --color-base-300: oklch(16% 0.016 164);
+  --color-base-content: oklch(92% 0.012 164);
+
+  --color-primary: oklch(74% 0.19 152);
+  --color-primary-content: oklch(19% 0.045 152);
+  --color-secondary: oklch(69% 0.13 172);
+  --color-secondary-content: oklch(15% 0.026 172);
+  --color-accent: oklch(78% 0.16 128);
+  --color-accent-content: oklch(21% 0.042 128);
+
+  --color-neutral: oklch(31% 0.03 171);
+  --color-neutral-content: oklch(88% 0.01 171);
+  --color-info: oklch(74% 0.14 238);
+  --color-info-content: oklch(17% 0.03 238);
+  --color-success: oklch(75% 0.18 156);
+  --color-success-content: oklch(19% 0.04 156);
+  --color-warning: oklch(84% 0.16 86);
+  --color-warning-content: oklch(21% 0.035 86);
+  --color-error: oklch(69% 0.2 25);
+  --color-error-content: oklch(17% 0.03 25);
+
+  --radius-selector: 0.75rem;
+  --radius-field: 0.5rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+@plugin "daisyui/theme" {
+  name: "budgetbros-light";
+  default: false;
+  prefersdark: false;
+  color-scheme: light;
+
+  --color-base-100: oklch(98% 0.012 164);
+  --color-base-200: oklch(95% 0.01 164);
+  --color-base-300: oklch(90% 0.012 164);
+  --color-base-content: oklch(25% 0.02 164);
+
+  --color-primary: oklch(42% 0.14 152);
+  --color-primary-content: oklch(98% 0.01 152);
+  --color-secondary: oklch(40% 0.11 172);
+  --color-secondary-content: oklch(98% 0.01 172);
+  --color-accent: oklch(44% 0.12 128);
+  --color-accent-content: oklch(98% 0.01 128);
+
+  --color-neutral: oklch(34% 0.03 171);
+  --color-neutral-content: oklch(96% 0.008 171);
+  --color-info: oklch(43% 0.11 238);
+  --color-info-content: oklch(98% 0.01 238);
+  --color-success: oklch(43% 0.14 156);
+  --color-success-content: oklch(98% 0.01 156);
+  --color-warning: oklch(63% 0.14 86);
+  --color-warning-content: oklch(22% 0.03 86);
+  --color-error: oklch(44% 0.17 25);
+  --color-error-content: oklch(98% 0.01 25);
+
+  --radius-selector: 0.75rem;
+  --radius-field: 0.5rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+:root {
+  background-color: var(--color-base-200);
+}
+
+body {
+  min-height: 100%;
+  font-family: "Baloo 2", sans-serif;
+  background:
+    radial-gradient(circle at 15% 20%, oklch(36% 0.06 165 / 0.32), transparent 46%),
+    radial-gradient(circle at 85% 0%, oklch(30% 0.05 145 / 0.3), transparent 50%),
+    linear-gradient(180deg, var(--color-base-200), var(--color-base-100));
+  color: var(--color-base-content);
+}
+
+::selection {
+  background: color-mix(in oklab, var(--color-primary) 62%, black);
+  color: var(--color-primary-content);
+}

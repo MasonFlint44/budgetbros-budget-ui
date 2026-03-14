@@ -1,8 +1,10 @@
 {
   "name": "Angular Dev",
-  "build": {
-    "dockerfile": "Dockerfile"
-  },
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "runServices": ["app", "api"],
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "shutdownAction": "stopCompose",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -10,17 +12,20 @@
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
         "ms-vscode.vscode-typescript-next",
-        "openai.chatgpt",
+        "openai.chatgpt"
       ]
     }
   },
-  "forwardPorts": [4200],
+  "forwardPorts": [4200, 8000],
   "portsAttributes": {
     "4200": {
       "label": "Angular Dev Server"
+    },
+    "8000": {
+      "label": "Budget API"
     }
   },
   "remoteUser": "node",
-  "postCreateCommand": "if [ -f package.json ]; then npm install; fi",
+  "postCreateCommand": "if ! command -v ng >/dev/null 2>&1; then npm install -g @angular/cli; fi && if [ -f package.json ]; then npm install; fi",
   "postStartCommand": "if [ -f angular.json ]; then echo 'Angular project detected. Start with: npm start or ng serve --host 0.0.0.0 --port 4200'; fi"
 }

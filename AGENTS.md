@@ -54,3 +54,14 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 - Design services around a single responsibility
 - Use the `providedIn: 'root'` option for singleton services
 - Use the `inject()` function instead of constructor injection
+
+## Devcontainer API Container Context
+
+- The devcontainer includes an additional `api` service in `.devcontainer/docker-compose.yml`.
+- The `api` service runs `ghcr.io/masonflint44/budgetbros-budget-api:0.1.0` and is reachable from other services at `http://api:8000`.
+- The API depends on the `postgres` service in the same compose file.
+- The API container is configured with:
+  - `DATABASE_URL` (defaults to `postgresql+asyncpg://budgetbros:budgetbros@postgres:5432/budgetbros`)
+  - `COGNITO_ISSUER` (defaults to the BudgetBros Cognito issuer URL)
+  - `COGNITO_CLIENT_IDS` (defaults to the BudgetBros Cognito app client id)
+- For frontend/API integration work inside the devcontainer network, assume the backend is expected to be reachable at `http://api:8000` unless overridden by environment configuration.

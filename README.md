@@ -2,6 +2,19 @@
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.1.4.
 
+## AWS Cognito Login Setup
+
+The app now uses the `angular-oauth2-oidc` package with Cognito Hosted UI
+(OAuth 2.0 Authorization Code + PKCE).
+
+1. Open `src/app/auth/cognito.config.ts`.
+2. Set `domain` to your Cognito Hosted UI domain.
+3. Set `clientId` to your Cognito App Client ID (without a client secret).
+4. Set `redirectUri` and `logoutUri` to URLs allowed in your Cognito app client settings.
+5. Keep `openid` in `scopes` so user profile data can be loaded.
+
+After these values are set, run `ng serve` and use the `Sign in with Cognito` button in the UI.
+
 ## Development server
 
 To start a local development server, run:
