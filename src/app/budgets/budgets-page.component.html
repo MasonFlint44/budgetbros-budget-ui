@@ -1,0 +1,661 @@
+<section class="rounded-box border border-base-300 bg-base-100 p-6 shadow-sm">
+  <div class="flex flex-wrap items-start justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-2">
+        <h1 class="text-2xl font-semibold">Budgets</h1>
+        @if (pageLoadingIndicatorVisible()) {
+          <span
+            class="loading loading-dots loading-sm text-primary"
+            role="status"
+            aria-label="Loading budgets page"
+          ></span>
+        }
+      </div>
+    </div>
+
+    @if (hasBudgets()) {
+      <div class="flex flex-wrap items-center justify-end gap-3">
+        @if (hasArchivedCategories()) {
+          <div
+            #archivedCategoriesDropdown
+            class="dropdown dropdown-end"
+            [class.dropdown-open]="archivedCategoriesVisible()"
+          >
+            <button
+              class="btn btn-outline"
+              type="button"
+              aria-haspopup="dialog"
+              [attr.aria-expanded]="archivedCategoriesVisible()"
+              aria-controls="archived-categories-panel"
+              (click)="toggleArchivedCategoriesVisibility()"
+            >
+              Archived categories ({{ archivedCategories().length }})
+            </button>
+
+            @if (archivedCategoriesVisible()) {
+              <div class="dropdown-content z-20 mt-3 w-[min(48rem,calc(100vw-2rem))] max-w-screen">
+                <div
+                  id="archived-categories-panel"
+                  class="space-y-3 rounded-box border border-base-300 bg-base-100 p-4 shadow"
+                >
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <h2 class="text-lg font-semibold">Archived categories</h2>
+                      <p class="text-sm opacity-75">
+                        These categories are hidden from your active budget list.
+                      </p>
+                    </div>
+                    <span class="badge badge-outline">
+                      {{ archivedCategories().length }}
+                      {{
+                        archivedCategories().length === 1
+                          ? 'archived category'
+                          : 'archived categories'
+                      }}
+                    </span>
+                  </div>
+
+                  @if (activeBudget(); as budget) {
+                    <div class="overflow-x-auto rounded-box border border-base-300 bg-base-100">
+                      <table class="table w-full min-w-[560px]">
+                        <caption class="sr-only">
+                          Archived categories for
+                          {{
+                            budget.name
+                          }}
+                        </caption>
+                        <thead>
+                          <tr>
+                            <th scope="col">Category</th>
+                            <th scope="col" class="text-right">Assigned</th>
+                            <th scope="col" class="text-right">Activity</th>
+                            <th scope="col" class="text-right">Available</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (category of archivedCategories(); track category.id) {
+                            <tr class="opacity-75">
+                              <th scope="row" class="font-medium">
+                                <div class="flex flex-wrap items-center gap-2">
+                                  <span>{{ category.name }}</span>
+                                  <span class="badge badge-ghost">Archived</span>
+                                </div>
+                              </th>
+                              <td class="text-right font-mono tabular-nums">
+                                {{
+                                  formatCurrencyAmount(
+                                    assignedAmountInCents(category),
+                                    budget.base_currency_code
+                                  )
+                                }}
+                              </td>
+                              <td class="text-right font-mono tabular-nums">
+                                {{
+                                  formatCurrencyAmount(
+                                    activityAmountInCents(category),
+                                    budget.base_currency_code
+                                  )
+                                }}
+                              </td>
+                              <td class="text-right font-mono tabular-nums">
+                                {{
+                                  formatCurrencyAmount(
+                                    availableAmountInCents(category),
+                                    budget.base_currency_code
+                                  )
+                                }}
+                              </td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <div
+          #createCategoryDropdown
+          class="dropdown dropdown-end"
+          [class.dropdown-open]="createCategoryFormVisible()"
+        >
+          <button
+            class="btn btn-primary"
+            type="button"
+            aria-label="Open create category form"
+            (click)="showCreateCategoryForm()"
+          >
+            Create category
+          </button>
+          <div
+            class="dropdown-content z-20 mt-3 w-[min(28rem,calc(100vw-2rem))] rounded-box border border-base-300 bg-base-100 p-4 shadow"
+          >
+            @if (activeBudget(); as budget) {
+              <form [formGroup]="categoryForm" (ngSubmit)="createCategory()">
+                <div>
+                  <div>
+                    <h2 class="text-lg font-semibold">Create category</h2>
+                    <p class="text-sm opacity-75">Add a category to {{ budget.name }}.</p>
+                  </div>
+                </div>
+
+                <div class="mt-4">
+                  <label class="label" for="category-name">
+                    <span class="label-text font-medium">Category name</span>
+                  </label>
+                  <input
+                    id="category-name"
+                    class="input input-bordered w-full"
+                    type="text"
+                    formControlName="name"
+                  />
+                  @if (categoryForm.controls.name.invalid && categoryForm.controls.name.touched) {
+                    <p class="mt-2 text-sm text-error">Enter a category name.</p>
+                  }
+                </div>
+
+                @if (categorySubmitError() !== null) {
+                  <p class="alert alert-error mt-4 text-sm" role="alert">
+                    {{ categorySubmitError() }}
+                  </p>
+                }
+
+                <div class="mt-4 flex justify-end">
+                  <button class="btn btn-primary" type="submit" [disabled]="categorySubmitting()">
+                    {{ categorySubmitting() ? 'Creating category...' : 'Create category' }}
+                  </button>
+                </div>
+              </form>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  @if (budgetsError() !== null) {
+    <p class="alert alert-error mt-6 text-sm" role="alert">{{ budgetsError() }}</p>
+  }
+
+  @if (budgetsLoading()) {
+    <div class="mt-6 rounded-box border border-base-300 bg-base-200/50 p-6" aria-live="polite">
+      <p class="text-sm">Loading your budgets.</p>
+    </div>
+  } @else if (showNoBudgetsState()) {
+    <div class="mt-6 rounded-box border border-dashed border-base-300 bg-base-200/40 p-6">
+      <h2 class="text-lg font-semibold">No budgets yet</h2>
+      <p class="mt-2 text-sm opacity-80">
+        Create your first budget to start organizing categories and tracking spending.
+      </p>
+      <button class="btn btn-primary mt-4" type="button" (click)="showCreateBudgetForm()">
+        Create budget
+      </button>
+
+      @if (createBudgetFormVisible()) {
+        <form
+          class="mt-6 rounded-box border border-base-300 bg-base-100 p-4"
+          [formGroup]="budgetForm"
+          (ngSubmit)="createBudget()"
+        >
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 class="text-lg font-semibold">Create budget</h2>
+              <p class="text-sm opacity-75">
+                Add your first budget to start organizing categories.
+              </p>
+            </div>
+            <button class="btn btn-ghost btn-sm" type="button" (click)="hideCreateBudgetForm()">
+              Cancel
+            </button>
+          </div>
+
+          <div class="mt-4 grid gap-4 md:grid-cols-2">
+            <div>
+              <label class="label" for="budget-name">
+                <span class="label-text font-medium">Budget name</span>
+              </label>
+              <input
+                id="budget-name"
+                class="input input-bordered w-full"
+                type="text"
+                formControlName="name"
+              />
+              @if (budgetForm.controls.name.invalid && budgetForm.controls.name.touched) {
+                <p class="mt-2 text-sm text-error">Enter a budget name.</p>
+              }
+            </div>
+
+            <div>
+              <label class="label" for="budget-currency">
+                <span class="label-text font-medium">Base currency</span>
+              </label>
+              @if (currencies().length > 0) {
+                <select
+                  id="budget-currency"
+                  class="select select-bordered w-full"
+                  formControlName="baseCurrencyCode"
+                >
+                  @for (currency of currencies(); track currency.code) {
+                    <option [value]="currency.code">
+                      {{ currency.code }} - {{ currency.name }}
+                    </option>
+                  }
+                </select>
+              } @else {
+                <input
+                  id="budget-currency"
+                  class="input input-bordered w-full uppercase"
+                  type="text"
+                  maxlength="3"
+                  formControlName="baseCurrencyCode"
+                />
+              }
+              @if (
+                budgetForm.controls.baseCurrencyCode.invalid &&
+                budgetForm.controls.baseCurrencyCode.touched
+              ) {
+                <p class="mt-2 text-sm text-error">Enter a valid 3-letter currency code.</p>
+              }
+            </div>
+          </div>
+
+          @if (budgetSubmitError() !== null) {
+            <p class="alert alert-error mt-4 text-sm" role="alert">{{ budgetSubmitError() }}</p>
+          }
+
+          <div class="mt-4 flex justify-end">
+            <button class="btn btn-primary" type="submit" [disabled]="budgetSubmitting()">
+              {{ budgetSubmitting() ? 'Creating budget...' : 'Create budget' }}
+            </button>
+          </div>
+        </form>
+      }
+    </div>
+  } @else {
+    @if (activeBudget(); as budget) {
+      <div class="mt-6 space-y-6">
+        <div class="max-w-md space-y-3">
+          <div
+            #budgetSwitcherDropdown
+            class="dropdown w-full"
+            [class.dropdown-open]="budgetSwitcherOpen()"
+          >
+            <button
+              class="btn h-auto min-h-0 w-full justify-between rounded-box border border-base-300 bg-base-200/40 px-4 py-3 text-left normal-case"
+              type="button"
+              aria-haspopup="menu"
+              [attr.aria-expanded]="budgetSwitcherOpen()"
+              aria-label="Choose a budget"
+              (click)="toggleBudgetSwitcher()"
+            >
+              <span class="min-w-0">
+                <span class="block truncate font-semibold">{{ budget.name }}</span>
+                <span class="block text-sm opacity-70"
+                  >Currency: {{ budget.base_currency_code }}</span
+                >
+              </span>
+              <span aria-hidden="true" class="text-lg leading-none opacity-70">▾</span>
+            </button>
+            @if (budgetSwitcherOpen()) {
+              <div class="absolute left-0 right-0 top-full z-20 mt-3">
+                <div class="rounded-box border border-base-300 bg-base-100 p-2 shadow">
+                  <ul class="menu w-full p-0" role="menu" aria-label="Budgets">
+                    @for (option of budgets(); track option.id) {
+                      <li role="none">
+                        <button
+                          class="justify-between"
+                          type="button"
+                          role="menuitem"
+                          [class.active]="option.id === budget.id"
+                          [attr.aria-current]="option.id === budget.id ? 'true' : null"
+                          (click)="selectBudget(option.id)"
+                        >
+                          <span class="truncate">{{ option.name }}</span>
+                          <span class="text-xs opacity-70">{{ option.base_currency_code }}</span>
+                        </button>
+                      </li>
+                    }
+                    <li role="none" class="mt-1 border-t border-base-300 pt-1">
+                      <button
+                        class="justify-between"
+                        type="button"
+                        role="menuitem"
+                        aria-haspopup="dialog"
+                        [attr.aria-expanded]="createBudgetFormVisible()"
+                        (click)="toggleCreateBudgetForm()"
+                      >
+                        <span>Create budget</span>
+                        <span aria-hidden="true" class="text-lg leading-none opacity-70">▾</span>
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+
+                @if (createBudgetFormVisible()) {
+                  <div
+                    #createBudgetDropdown
+                    class="mt-2 w-[min(36rem,calc(100vw-2rem))] rounded-box border border-base-300 bg-base-100 p-4 shadow"
+                  >
+                    <form [formGroup]="budgetForm" (ngSubmit)="createBudget()">
+                      <div>
+                        <div>
+                          <h2 class="text-lg font-semibold">Create budget</h2>
+                          <p class="text-sm opacity-75">
+                            Add another budget and switch between them here.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div class="mt-4 grid gap-4 md:grid-cols-2">
+                        <div>
+                          <label class="label" for="budget-name">
+                            <span class="label-text font-medium">Budget name</span>
+                          </label>
+                          <input
+                            id="budget-name"
+                            class="input input-bordered w-full"
+                            type="text"
+                            formControlName="name"
+                          />
+                          @if (
+                            budgetForm.controls.name.invalid && budgetForm.controls.name.touched
+                          ) {
+                            <p class="mt-2 text-sm text-error">Enter a budget name.</p>
+                          }
+                        </div>
+
+                        <div>
+                          <label class="label" for="budget-currency">
+                            <span class="label-text font-medium">Base currency</span>
+                          </label>
+                          @if (currencies().length > 0) {
+                            <select
+                              id="budget-currency"
+                              class="select select-bordered w-full"
+                              formControlName="baseCurrencyCode"
+                            >
+                              @for (currency of currencies(); track currency.code) {
+                                <option [value]="currency.code">
+                                  {{ currency.code }} - {{ currency.name }}
+                                </option>
+                              }
+                            </select>
+                          } @else {
+                            <input
+                              id="budget-currency"
+                              class="input input-bordered w-full uppercase"
+                              type="text"
+                              maxlength="3"
+                              formControlName="baseCurrencyCode"
+                            />
+                          }
+                          @if (
+                            budgetForm.controls.baseCurrencyCode.invalid &&
+                            budgetForm.controls.baseCurrencyCode.touched
+                          ) {
+                            <p class="mt-2 text-sm text-error">
+                              Enter a valid 3-letter currency code.
+                            </p>
+                          }
+                        </div>
+                      </div>
+
+                      @if (budgetSubmitError() !== null) {
+                        <p class="alert alert-error mt-4 text-sm" role="alert">
+                          {{ budgetSubmitError() }}
+                        </p>
+                      }
+
+                      <div class="mt-4 flex justify-end">
+                        <button
+                          class="btn btn-primary"
+                          type="submit"
+                          [disabled]="budgetSubmitting()"
+                        >
+                          {{ budgetSubmitting() ? 'Creating budget...' : 'Create budget' }}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        @if (categoriesError() !== null) {
+          <p class="alert alert-error text-sm" role="alert">{{ categoriesError() }}</p>
+        }
+
+        @if (editingCategoryId() !== null && categorySubmitError() !== null) {
+          <p class="alert alert-error text-sm" role="alert">{{ categorySubmitError() }}</p>
+        }
+
+        @if (showNoCategoriesState()) {
+          <div class="rounded-box border border-dashed border-base-300 bg-base-200/40 p-6">
+            <h2 class="text-lg font-semibold">No categories yet</h2>
+            <p class="mt-2 text-sm opacity-80">
+              This budget does not have any categories yet. Use the create category button above to
+              get started.
+            </p>
+          </div>
+        } @else {
+          <div class="overflow-x-auto rounded-box border border-base-300">
+            <table class="table table-zebra w-full min-w-[560px]">
+              <caption class="sr-only">
+                Budget categories for
+                {{
+                  budget.name
+                }}
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col" class="w-28">Order</th>
+                  <th scope="col">Category</th>
+                  <th scope="col" class="text-right">Assigned</th>
+                  <th scope="col" class="text-right">Activity</th>
+                  <th scope="col" class="text-right">Available</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (category of categories(); track category.id) {
+                  <tr
+                    data-category-context-target="true"
+                    draggable="true"
+                    class="select-none"
+                    [class.cursor-grab]="!isDraggingCategory(category.id)"
+                    [class.cursor-grabbing]="isDraggingCategory(category.id)"
+                    [class.opacity-60]="isDraggingCategory(category.id)"
+                    (dragstart)="handleCategoryDragStart($event, category.id)"
+                    (dragend)="handleCategoryDragEnd()"
+                    (dragover)="allowCategoryDrop($event)"
+                    (drop)="handleCategoryDrop(category.id)"
+                    (contextmenu)="openCategoryContextMenu($event, category)"
+                  >
+                    <td>
+                      <span
+                        aria-hidden="true"
+                        class="px-2 font-mono text-lg leading-none opacity-60"
+                        title="Drag to reorder"
+                      >
+                        ⋮⋮
+                      </span>
+                    </td>
+                    <th scope="row" class="font-medium">{{ category.name }}</th>
+                    <td class="text-right font-mono tabular-nums">
+                      {{
+                        formatCurrencyAmount(
+                          assignedAmountInCents(category),
+                          budget.base_currency_code
+                        )
+                      }}
+                    </td>
+                    <td class="text-right font-mono tabular-nums">
+                      {{
+                        formatCurrencyAmount(
+                          activityAmountInCents(category),
+                          budget.base_currency_code
+                        )
+                      }}
+                    </td>
+                    <td class="text-right font-mono tabular-nums">
+                      {{
+                        formatCurrencyAmount(
+                          availableAmountInCents(category),
+                          budget.base_currency_code
+                        )
+                      }}
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+
+      @if (editingCategoryId() !== null) {
+        <div
+          #editCategoryDropdown
+          class="fixed z-30 w-[min(28rem,calc(100vw-2rem))] rounded-box border border-base-300 bg-base-100 p-4 shadow-xl"
+          role="dialog"
+          aria-modal="false"
+          aria-label="Edit category"
+          [style.left.px]="editCategoryPosition()?.x ?? 24"
+          [style.top.px]="editCategoryPosition()?.y ?? 24"
+        >
+          @if (editingCategory(); as category) {
+            <form [formGroup]="editCategoryForm" (ngSubmit)="saveCategoryEdit()">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <h2 class="text-lg font-semibold">Edit category</h2>
+                </div>
+              </div>
+
+              <div class="mt-4">
+                <label class="label" for="edit-category-name">
+                  <span class="label-text font-medium">Category name</span>
+                </label>
+                <input
+                  id="edit-category-name"
+                  class="input input-bordered w-full"
+                  type="text"
+                  formControlName="name"
+                />
+                @if (editCategoryForm.controls.name.invalid && editCategoryForm.controls.name.touched) {
+                  <p class="mt-2 text-sm text-error">Enter a category name.</p>
+                }
+              </div>
+
+              <div class="mt-4 flex justify-end gap-2">
+                <button
+                  class="btn btn-outline mr-auto"
+                  type="button"
+                  [disabled]="categoryActionPending()"
+                  (click)="archiveCategory()"
+                >
+                  Archive
+                </button>
+                <button
+                  class="btn btn-outline btn-error"
+                  type="button"
+                  [disabled]="categoryActionPending() || deleteCategoryOptions().length === 0"
+                  (click)="showDeleteCategoryConfirmation()"
+                >
+                  <svg
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.75"
+                    class="size-4"
+                  >
+                    <path d="M3 6h18" />
+                    <path d="M8 6V4h8v2" />
+                    <path d="M19 6l-1 14H6L5 6" />
+                    <path d="M10 11v6" />
+                    <path d="M14 11v6" />
+                  </svg>
+                  <span>Delete</span>
+                </button>
+                <button class="btn btn-ghost" type="button" (click)="cancelEditingCategory()">
+                  Cancel
+                </button>
+                <button class="btn btn-primary" type="submit" [disabled]="categoryActionPending()">
+                  {{ categoryActionPending() ? 'Saving...' : 'Save changes' }}
+                </button>
+              </div>
+
+              @if (deleteCategoryConfirmationVisible()) {
+                <div
+                  class="mt-4 rounded-box border border-error/30 bg-error/10 p-4"
+                  role="alertdialog"
+                  aria-modal="false"
+                  aria-label="Confirm delete category"
+                >
+                  <p class="text-sm font-medium">Delete {{ category.name }}?</p>
+                  <p class="mt-1 text-sm opacity-80">
+                    Choose a new category for this category&apos;s transactions, assigned balance,
+                    and available balance.
+                  </p>
+
+                  @if (deleteCategoryOptions().length === 0) {
+                    <p class="mt-3 text-sm">
+                      Create another category before deleting this one.
+                    </p>
+                  } @else {
+                    <div class="mt-4">
+                      <label class="label" for="delete-category-replacement">
+                        <span class="label-text font-medium">Move everything to</span>
+                      </label>
+                      <select
+                        id="delete-category-replacement"
+                        class="select select-bordered w-full"
+                        [formControl]="deleteCategoryForm.controls.replacementCategoryId"
+                      >
+                        <option value="">Select a category</option>
+                        @for (option of deleteCategoryOptions(); track option.id) {
+                          <option [value]="option.id">{{ option.name }}</option>
+                        }
+                      </select>
+                      @if (
+                        deleteCategoryForm.controls.replacementCategoryId.invalid &&
+                        deleteCategoryForm.controls.replacementCategoryId.touched
+                      ) {
+                      }
+                    </div>
+                  }
+
+                  <div class="mt-4 flex justify-end gap-2">
+                    <button
+                      class="btn btn-ghost"
+                      type="button"
+                      [disabled]="categoryActionPending()"
+                      (click)="hideDeleteCategoryConfirmation()"
+                    >
+                      Keep category
+                    </button>
+                    <button
+                      class="btn btn-error"
+                      type="button"
+                      [disabled]="categoryActionPending() || deleteCategoryOptions().length === 0"
+                      (click)="confirmCategoryDelete()"
+                    >
+                      {{ categoryActionPending() ? 'Deleting...' : 'Delete category' }}
+                    </button>
+                  </div>
+                </div>
+              }
+            </form>
+          }
+        </div>
+      }
+    }
+  }
+</section>

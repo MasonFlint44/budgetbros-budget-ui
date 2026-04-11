@@ -14,6 +14,7 @@ import {
   BudgetResponse,
   BudgetUpdate,
   CategoryCreate,
+  CategoryDelete,
   CategoryResponse,
   CategoryUpdate,
   CurrencyResponse,
@@ -170,10 +171,17 @@ export class BudgetApiService {
     );
   }
 
-  deleteCategory(budgetId: EntityId, categoryId: EntityId): Observable<void> {
+  deleteCategory(
+    budgetId: EntityId,
+    categoryId: EntityId,
+    payload: CategoryDelete
+  ): Observable<void> {
     return this.httpClient.delete<void>(
       this.url(`/budgets/${encodeURIComponent(budgetId)}/categories/${encodeURIComponent(categoryId)}`),
-      this.httpOptions()
+      {
+        ...this.httpOptions(),
+        body: payload
+      }
     );
   }
 

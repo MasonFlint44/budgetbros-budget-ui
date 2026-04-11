@@ -6,5 +6,6 @@
     "esbenp.prettier-vscode",
     "ms-vscode.vscode-typescript-next",
     "openai.chatgpt",
+    "anthropic.claude-code",
   ]
 }

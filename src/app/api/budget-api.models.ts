@@ -81,6 +81,10 @@ export interface CategoryResponse {
   readonly id: EntityId;
   readonly budget_id: EntityId;
   readonly name: string;
+  readonly sort_order?: number;
+  readonly assigned_minor?: number;
+  readonly activity_minor?: number;
+  readonly available_minor?: number;
   readonly created_at?: string;
   readonly updated_at?: string;
   readonly [key: string]: unknown;
@@ -93,6 +97,12 @@ export interface CategoryCreate {
 
 export interface CategoryUpdate {
   readonly name?: string;
+  readonly sort_order?: number;
+  readonly [key: string]: unknown;
+}
+
+export interface CategoryDelete {
+  readonly replacement_category_id: EntityId;
   readonly [key: string]: unknown;
 }
 

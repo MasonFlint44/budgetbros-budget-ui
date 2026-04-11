@@ -75,8 +75,11 @@
                   <a
                     class="text-sm sm:text-base"
                     [href]="link.href"
+                    [attr.aria-current]="isActivePage(link.page) ? 'page' : null"
+                    [class.active]="isActivePage(link.page)"
                     [class.relative]="link.hasPendingTransactions"
                     [class.pr-6]="link.hasPendingTransactions"
+                    (click)="setActivePage(link.page)"
                   >
                     {{ link.label }}
                     @if (link.hasPendingTransactions) {
@@ -92,10 +95,13 @@
             </ul>
           </details>
 
-          <a class="brand-logo btn btn-ghost text-xl normal-case sm:text-2xl" href="#dashboard">
+          <a
+            class="brand-logo btn btn-ghost text-xl normal-case sm:text-2xl"
+            href="#dashboard"
+            (click)="setActivePage('dashboard')"
+          >
             BudgetBros
           </a>
-
         </div>
 
         <div class="navbar-center hidden w-auto lg:flex lg:flex-1 lg:justify-center">
@@ -105,8 +111,11 @@
                 <a
                   class="px-2 text-sm sm:text-base whitespace-nowrap"
                   [href]="link.href"
+                  [attr.aria-current]="isActivePage(link.page) ? 'page' : null"
+                  [class.active]="isActivePage(link.page)"
                   [class.relative]="link.hasPendingTransactions"
                   [class.pr-6]="link.hasPendingTransactions"
+                  (click)="setActivePage(link.page)"
                 >
                   {{ link.label }}
                   @if (link.hasPendingTransactions) {
@@ -230,229 +239,259 @@
     </header>
 
     <main id="main-content" class="mx-auto flex w-full max-w-7xl flex-col gap-4 p-4 sm:p-6">
-      <section id="dashboard" class="rounded-box border border-base-300 bg-base-100 p-6 shadow-sm">
-        <h1 class="text-2xl font-semibold">Budget overview</h1>
-      </section>
+      @switch (activePage()) {
+        @case ('dashboard') {
+          <section id="dashboard" class="rounded-box border border-base-300 bg-base-100 p-6 shadow-sm">
+            <h1 class="text-2xl font-semibold">Budget overview</h1>
+          </section>
 
-      <section class="rounded-box border border-base-300 bg-base-100 p-6 shadow-sm">
-        <div class="flex flex-wrap items-center gap-3">
-          <div>
-            <div class="flex items-center gap-2">
-              <h2 class="text-lg font-semibold">Budget summary</h2>
-              @if (budgetActivityLoading()) {
-                <span
-                  class="loading loading-dots loading-sm text-primary"
-                  role="status"
-                  [attr.aria-label]="
-                    budgetActivityInitialLoading() ? 'Loading budget totals' : 'Updating totals'
-                  "
-                ></span>
+          <section class="rounded-box border border-base-300 bg-base-100 p-6 shadow-sm">
+            <div class="flex flex-wrap items-center gap-3">
+              <div>
+                <div class="flex items-center gap-2">
+                  <h2 class="text-lg font-semibold">Budget summary</h2>
+                  @if (budgetActivityLoading()) {
+                    <span
+                      class="loading loading-dots loading-sm text-primary"
+                      role="status"
+                      [attr.aria-label]="
+                        budgetActivityInitialLoading() ? 'Loading budget totals' : 'Updating totals'
+                      "
+                    ></span>
+                  }
+                </div>
+              </div>
+            </div>
+
+            @if (budgetActivityError() !== null) {
+              <p class="alert alert-error mt-4 text-sm" role="alert">{{ budgetActivityError() }}</p>
+            } @else {
+              @if (budgetActivityNotice() !== null) {
+                <p class="alert alert-warning mt-4 text-sm" role="status">{{ budgetActivityNotice() }}</p>
               }
-            </div>
-          </div>
-        </div>
 
-        @if (budgetActivityError() !== null) {
-          <p class="alert alert-error mt-4 text-sm" role="alert">{{ budgetActivityError() }}</p>
-        } @else {
-          @if (budgetActivityNotice() !== null) {
-            <p class="alert alert-warning mt-4 text-sm" role="status">{{ budgetActivityNotice() }}</p>
-          }
-          <div class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-box border border-base-300 bg-base-200/50 p-2">
-            <div class="join">
-              <button
-                class="btn btn-sm join-item"
-                type="button"
-                [disabled]="budgetActivityRefreshing() || !canViewPreviousPeriod()"
-                aria-label="View previous month"
-                (click)="viewPreviousPeriod()"
-              >
-                <span aria-hidden="true">‹</span>
-                Previous
-              </button>
-              <h3
-                class="btn btn-sm join-item btn-ghost pointer-events-none w-40 justify-center text-sm font-semibold sm:w-44"
-                aria-live="polite"
-              >
-                {{ activePeriod() }}
-              </h3>
-              <button
-                class="btn btn-sm join-item"
-                type="button"
-                [disabled]="budgetActivityRefreshing() || !canViewNextPeriod()"
-                aria-label="View next month"
-                (click)="viewNextPeriod()"
-              >
-                Next
-                <span aria-hidden="true">›</span>
-              </button>
-            </div>
-            <button
-              class="btn btn-outline btn-sm"
-              type="button"
-              [disabled]="budgetActivityRefreshing() || isViewingCurrentPeriod()"
-              (click)="viewCurrentPeriod()"
-            >
-              Jump to {{ currentPeriodLabel() }}
-            </button>
-          </div>
-          <div class="mt-2 overflow-x-auto">
-            <table class="table table-zebra table-sm w-full min-w-[640px]">
-              <caption class="sr-only">
-                Budget activity table for {{ activePeriod() }}
-              </caption>
-              <thead>
-                <tr>
-                  <th scope="col">Budget</th>
-                  <th scope="col" class="text-right">Inflow</th>
-                  <th scope="col" class="text-right">Outflow</th>
-                  <th scope="col" class="text-right">Net</th>
-                  <th scope="col" class="text-right">Transactions</th>
-                </tr>
-              </thead>
-              <tbody>
-                @if (budgetActivityRows().length === 0) {
-                  <tr>
-                    <th scope="row" class="font-medium">No budgets yet</th>
-                    <td class="text-right">
-                      <app-money-countdown-row
-                        class="justify-end"
-                        label="No budget inflow"
-                        [amountInCents]="0"
-                        currencyCode="USD"
-                        [compact]="true"
-                      ></app-money-countdown-row>
-                    </td>
-                    <td class="text-right">
-                      <app-money-countdown-row
-                        class="justify-end"
-                        label="No budget outflow"
-                        [amountInCents]="0"
-                        currencyCode="USD"
-                        [compact]="true"
-                      ></app-money-countdown-row>
-                    </td>
-                    <td class="text-right">
-                      <div class="inline-flex justify-end" [class]="netAmountClass(0)">
+              <div class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-box border border-base-300 bg-base-200/50 p-2">
+                <div class="join">
+                  <button
+                    class="btn btn-sm join-item"
+                    type="button"
+                    [disabled]="budgetActivityRefreshing() || !canViewPreviousPeriod()"
+                    aria-label="View previous month"
+                    (click)="viewPreviousPeriod()"
+                  >
+                    <span aria-hidden="true">‹</span>
+                    Previous
+                  </button>
+                  <h3
+                    class="btn btn-sm join-item btn-ghost pointer-events-none w-40 justify-center text-sm font-semibold sm:w-44"
+                    aria-live="polite"
+                  >
+                    {{ activePeriod() }}
+                  </h3>
+                  <button
+                    class="btn btn-sm join-item"
+                    type="button"
+                    [disabled]="budgetActivityRefreshing() || !canViewNextPeriod()"
+                    aria-label="View next month"
+                    (click)="viewNextPeriod()"
+                  >
+                    Next
+                    <span aria-hidden="true">›</span>
+                  </button>
+                </div>
+                <button
+                  class="btn btn-outline btn-sm"
+                  type="button"
+                  [disabled]="budgetActivityRefreshing() || isViewingCurrentPeriod()"
+                  (click)="viewCurrentPeriod()"
+                >
+                  Jump to {{ currentPeriodLabel() }}
+                </button>
+              </div>
+
+              <div class="mt-2 overflow-x-auto">
+                <table class="table table-zebra table-sm w-full min-w-[640px]">
+                  <caption class="sr-only">
+                    Budget activity table for {{ activePeriod() }}
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Budget</th>
+                      <th scope="col" class="text-right">Inflow</th>
+                      <th scope="col" class="text-right">Outflow</th>
+                      <th scope="col" class="text-right">Net</th>
+                      <th scope="col" class="text-right">Transactions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @if (budgetActivityRows().length === 0) {
+                      <tr>
+                        <th scope="row" class="font-medium">No budgets yet</th>
+                        <td class="text-right">
+                          <app-money-countdown-row
+                            class="justify-end"
+                            label="No budget inflow"
+                            [amountInCents]="0"
+                            currencyCode="USD"
+                            [compact]="true"
+                          ></app-money-countdown-row>
+                        </td>
+                        <td class="text-right">
+                          <app-money-countdown-row
+                            class="justify-end"
+                            label="No budget outflow"
+                            [amountInCents]="0"
+                            currencyCode="USD"
+                            [compact]="true"
+                          ></app-money-countdown-row>
+                        </td>
+                        <td class="text-right">
+                          <div class="inline-flex justify-end" [class]="netAmountClass(0)">
+                            <app-money-countdown-row
+                              class="justify-end"
+                              label="No budget net"
+                              [amountInCents]="0"
+                              currencyCode="USD"
+                              [compact]="true"
+                            ></app-money-countdown-row>
+                          </div>
+                        </td>
+                        <td class="text-right">0</td>
+                      </tr>
+                    } @else {
+                      @for (row of budgetActivityRows(); track row.id) {
+                        <tr>
+                          <th scope="row" class="font-medium">{{ row.label }}</th>
+                          <td class="text-right">
+                            <app-money-countdown-row
+                              class="justify-end"
+                              [label]="row.label + ' monthly inflow'"
+                              [amountInCents]="row.monthlyInflowInCents"
+                              [currencyCode]="row.currencyCode"
+                              [compact]="true"
+                            ></app-money-countdown-row>
+                          </td>
+                          <td class="text-right">
+                            <app-money-countdown-row
+                              class="justify-end"
+                              [label]="row.label + ' monthly outflow'"
+                              [amountInCents]="row.monthlyOutflowInCents"
+                              [currencyCode]="row.currencyCode"
+                              [compact]="true"
+                            ></app-money-countdown-row>
+                          </td>
+                          <td class="text-right">
+                            <div class="inline-flex justify-end" [class]="netAmountClass(row.monthlyNetInCents)">
+                              <app-money-countdown-row
+                                class="justify-end"
+                                [label]="row.label + ' monthly net'"
+                                [amountInCents]="row.monthlyNetInCents"
+                                [currencyCode]="row.currencyCode"
+                                [compact]="true"
+                              ></app-money-countdown-row>
+                            </div>
+                          </td>
+                          <td class="text-right">{{ row.transactionCount }}</td>
+                        </tr>
+                      }
+                    }
+                  </tbody>
+                  <tfoot>
+                    <tr class="font-semibold">
+                      <th scope="row">Totals</th>
+                      <td class="text-right">
                         <app-money-countdown-row
                           class="justify-end"
-                          label="No budget net"
-                          [amountInCents]="0"
+                          label="Totals inflow"
+                          [amountInCents]="periodSummary().totalInflowInCents"
                           currencyCode="USD"
                           [compact]="true"
                         ></app-money-countdown-row>
-                      </div>
-                    </td>
-                    <td class="text-right">0</td>
-                  </tr>
-                } @else {
-                  @for (row of budgetActivityRows(); track row.id) {
-                  <tr>
-                    <th scope="row" class="font-medium">{{ row.label }}</th>
-                    <td class="text-right">
-                      <app-money-countdown-row
-                        class="justify-end"
-                        [label]="row.label + ' monthly inflow'"
-                        [amountInCents]="row.monthlyInflowInCents"
-                        [currencyCode]="row.currencyCode"
-                        [compact]="true"
-                      ></app-money-countdown-row>
-                    </td>
-                    <td class="text-right">
-                      <app-money-countdown-row
-                        class="justify-end"
-                        [label]="row.label + ' monthly outflow'"
-                        [amountInCents]="row.monthlyOutflowInCents"
-                        [currencyCode]="row.currencyCode"
-                        [compact]="true"
-                      ></app-money-countdown-row>
-                    </td>
-                    <td class="text-right">
-                      <div class="inline-flex justify-end" [class]="netAmountClass(row.monthlyNetInCents)">
+                      </td>
+                      <td class="text-right">
                         <app-money-countdown-row
                           class="justify-end"
-                          [label]="row.label + ' monthly net'"
-                          [amountInCents]="row.monthlyNetInCents"
-                          [currencyCode]="row.currencyCode"
+                          label="Totals outflow"
+                          [amountInCents]="periodSummary().totalOutflowInCents"
+                          currencyCode="USD"
                           [compact]="true"
                         ></app-money-countdown-row>
-                      </div>
-                    </td>
-                    <td class="text-right">{{ row.transactionCount }}</td>
-                  </tr>
-                  }
-                }
-              </tbody>
-              <tfoot>
-                <tr class="font-semibold">
-                  <th scope="row">Totals</th>
-                  <td class="text-right">
-                    <app-money-countdown-row
-                      class="justify-end"
-                      label="Totals inflow"
-                      [amountInCents]="periodSummary().totalInflowInCents"
-                      currencyCode="USD"
-                      [compact]="true"
-                    ></app-money-countdown-row>
-                  </td>
-                  <td class="text-right">
-                    <app-money-countdown-row
-                      class="justify-end"
-                      label="Totals outflow"
-                      [amountInCents]="periodSummary().totalOutflowInCents"
-                      currencyCode="USD"
-                      [compact]="true"
-                    ></app-money-countdown-row>
-                  </td>
-                  <td class="text-right">
-                    <div class="inline-flex justify-end" [class]="netAmountClass(periodSummary().totalNetInCents)">
-                      <app-money-countdown-row
-                        class="justify-end"
-                        label="Totals net"
-                        [amountInCents]="periodSummary().totalNetInCents"
-                        currencyCode="USD"
-                        [compact]="true"
-                      ></app-money-countdown-row>
-                    </div>
-                  </td>
-                  <td class="text-right">{{ periodSummary().totalTransactionCount }}</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
+                      </td>
+                      <td class="text-right">
+                        <div class="inline-flex justify-end" [class]="netAmountClass(periodSummary().totalNetInCents)">
+                          <app-money-countdown-row
+                            class="justify-end"
+                            label="Totals net"
+                            [amountInCents]="periodSummary().totalNetInCents"
+                            currencyCode="USD"
+                            [compact]="true"
+                          ></app-money-countdown-row>
+                        </div>
+                      </td>
+                      <td class="text-right">{{ periodSummary().totalTransactionCount }}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            }
+          </section>
+
+          <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <article id="transactions" class="card bg-base-100 shadow-sm">
+              <div class="card-body">
+                <h2 class="card-title text-base">Transactions</h2>
+                <p class="text-sm">{{ transactionsSummaryLabel() }}</p>
+              </div>
+            </article>
+
+            <article id="budgets" class="card bg-base-100 shadow-sm">
+              <div class="card-body">
+                <h2 class="card-title text-base">Budgets</h2>
+                <p class="text-sm">{{ budgetsSummaryLabel() }}</p>
+              </div>
+            </article>
+
+            <article id="goals" class="card bg-base-100 shadow-sm">
+              <div class="card-body">
+                <h2 class="card-title text-base">Goals</h2>
+                <p class="text-sm">3 milestones on pace</p>
+              </div>
+            </article>
+
+            <article id="reports" class="card bg-base-100 shadow-sm">
+              <div class="card-body">
+                <h2 class="card-title text-base">Reports</h2>
+                <p class="text-sm">Quarterly summary ready</p>
+              </div>
+            </article>
+          </section>
         }
 
-      </section>
+        @case ('budgets') {
+          <app-budgets-page (dataChanged)="reloadMoneyRows()"></app-budgets-page>
+        }
 
-      <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <article id="transactions" class="card bg-base-100 shadow-sm">
-          <div class="card-body">
-            <h2 class="card-title text-base">Transactions</h2>
-            <p class="text-sm">{{ transactionsSummaryLabel() }}</p>
-          </div>
-        </article>
+        @case ('transactions') {
+          <section class="rounded-box border border-base-300 bg-base-100 p-6 shadow-sm">
+            <h1 class="text-2xl font-semibold">Transactions</h1>
+            <p class="mt-2 text-sm opacity-75">Transaction tools will live here.</p>
+          </section>
+        }
 
-        <article id="budgets" class="card bg-base-100 shadow-sm">
-          <div class="card-body">
-            <h2 class="card-title text-base">Budgets</h2>
-            <p class="text-sm">{{ budgetsSummaryLabel() }}</p>
-          </div>
-        </article>
+        @case ('goals') {
+          <section class="rounded-box border border-base-300 bg-base-100 p-6 shadow-sm">
+            <h1 class="text-2xl font-semibold">Goals</h1>
+            <p class="mt-2 text-sm opacity-75">Goals and milestone tracking will live here.</p>
+          </section>
+        }
 
-        <article id="goals" class="card bg-base-100 shadow-sm">
-          <div class="card-body">
-            <h2 class="card-title text-base">Goals</h2>
-            <p class="text-sm">3 milestones on pace</p>
-          </div>
-        </article>
-
-        <article id="reports" class="card bg-base-100 shadow-sm">
-          <div class="card-body">
-            <h2 class="card-title text-base">Reports</h2>
-            <p class="text-sm">Quarterly summary ready</p>
-          </div>
-        </article>
-      </section>
+        @case ('reports') {
+          <section class="rounded-box border border-base-300 bg-base-100 p-6 shadow-sm">
+            <h1 class="text-2xl font-semibold">Reports</h1>
+            <p class="mt-2 text-sm opacity-75">Reporting views will live here.</p>
+          </section>
+        }
+      }
     </main>
   }
 </div>

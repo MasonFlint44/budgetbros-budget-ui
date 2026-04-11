@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { App } from './app';
 import { BudgetApiService } from './api/budget-api.service';
+import { CategoryResponse, CurrencyResponse } from './api/budget-api.models';
 import { AuthService, AuthenticatedUser } from './auth/auth.service';
 
 type AuthStatus = 'checking' | 'authenticated' | 'unauthenticated';
@@ -49,6 +50,7 @@ describe('App', () => {
 
   beforeEach(async () => {
     localStorage.clear();
+    window.location.hash = '';
     authServiceStub = createAuthServiceStub();
     const budgetApiServiceStub = {
       getCurrentUser: () =>
@@ -58,7 +60,9 @@ describe('App', () => {
           name: 'Alex Carter',
           created_at: '2024-02-15T18:30:00.000Z'
         }),
-      listBudgets: () => of([])
+      listBudgets: () => of([]),
+      listCurrencies: () => of<readonly CurrencyResponse[]>([]),
+      listCategories: () => of<readonly CategoryResponse[]>([])
     };
 
     await TestBed.configureTestingModule({
@@ -243,5 +247,22 @@ describe('App', () => {
     expect(appShell?.getAttribute('data-theme')).toBe('budgetbros-light');
     expect(themeToggle?.checked).toBe(true);
     expect(themeToggle?.getAttribute('aria-label')).toBe('Switch to dark theme');
+  });
+
+  it('should show the budgets page when the Budgets button is clicked', async () => {
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const budgetsLink = compiled.querySelector('a[href="#budgets"]') as HTMLAnchorElement | null;
+
+    budgetsLink?.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(compiled.querySelector('h1')?.textContent).toContain('Budgets');
+    expect(compiled.textContent).toContain('No budgets yet');
+    expect(compiled.textContent).toContain('Create budget');
   });
 });

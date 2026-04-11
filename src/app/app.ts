@@ -19,11 +19,15 @@ import {
   UserResponse
 } from './api/budget-api.models';
 import { AuthService } from './auth/auth.service';
+import { BudgetsPageComponent } from './budgets/budgets-page.component';
 import { MoneyCountdownRowComponent } from './money-countdown-row.component';
+
+type AppPage = 'dashboard' | 'budgets' | 'transactions' | 'goals' | 'reports';
 
 type NavLink = {
   readonly label: string;
   readonly href: string;
+  readonly page: AppPage;
   readonly hasPendingTransactions: boolean;
 };
 
@@ -59,9 +63,10 @@ const MIN_ACTIVITY_LOADING_MS = 1000;
   templateUrl: './app.html',
   styleUrl: './app.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MoneyCountdownRowComponent],
+  imports: [BudgetsPageComponent, MoneyCountdownRowComponent],
   host: {
-    '(document:click)': 'closeUserDropdownOnOutsideClick($event)'
+    '(document:click)': 'closeUserDropdownOnOutsideClick($event)',
+    '(window:hashchange)': 'syncPageFromLocation()'
   }
 })
 export class App implements OnInit {
@@ -76,12 +81,18 @@ export class App implements OnInit {
   private readonly currentUser = this.authService.user;
 
   protected readonly navLinks: readonly NavLink[] = [
-    { label: 'Dashboard', href: '#dashboard', hasPendingTransactions: false },
-    { label: 'Budgets', href: '#budgets', hasPendingTransactions: false },
-    { label: 'Transactions', href: '#transactions', hasPendingTransactions: true },
-    { label: 'Goals', href: '#goals', hasPendingTransactions: false },
-    { label: 'Reports', href: '#reports', hasPendingTransactions: false }
+    { label: 'Dashboard', href: '#dashboard', page: 'dashboard', hasPendingTransactions: false },
+    { label: 'Budgets', href: '#budgets', page: 'budgets', hasPendingTransactions: false },
+    {
+      label: 'Transactions',
+      href: '#transactions',
+      page: 'transactions',
+      hasPendingTransactions: true
+    },
+    { label: 'Goals', href: '#goals', page: 'goals', hasPendingTransactions: false },
+    { label: 'Reports', href: '#reports', page: 'reports', hasPendingTransactions: false }
   ];
+  protected readonly activePage = signal<AppPage>(this.readPageFromLocation());
   protected readonly activeTheme = signal<AppTheme>(this.readPersistedTheme());
   protected readonly isLightTheme = computed(() => this.activeTheme() === LIGHT_THEME);
   protected readonly themeToggleAriaLabel = computed(() =>
@@ -234,6 +245,20 @@ export class App implements OnInit {
 
   ngOnInit(): void {
     void this.authService.initialize();
+    this.syncPageFromLocation();
+  }
+
+  protected setActivePage(page: AppPage): void {
+    this.activePage.set(page);
+
+    const targetHash = `#${page}`;
+    if (window.location.hash !== targetHash) {
+      window.location.hash = targetHash;
+    }
+  }
+
+  protected isActivePage(page: AppPage): boolean {
+    return this.activePage() === page;
   }
 
   protected reloadMoneyRows(): void {
@@ -312,6 +337,25 @@ export class App implements OnInit {
     }
 
     return 'opacity-80';
+  }
+
+  protected syncPageFromLocation(): void {
+    this.activePage.set(this.readPageFromLocation());
+  }
+
+  private readPageFromLocation(): AppPage {
+    const hash = window.location.hash.replace(/^#/, '').trim().toLowerCase();
+
+    switch (hash) {
+      case 'budgets':
+      case 'transactions':
+      case 'goals':
+      case 'reports':
+        return hash;
+      case 'dashboard':
+      default:
+        return 'dashboard';
+    }
   }
 
   private resetMoneyRows(): void {
