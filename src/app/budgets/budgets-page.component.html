@@ -29,7 +29,7 @@
               aria-controls="archived-categories-panel"
               (click)="toggleArchivedCategoriesVisibility()"
             >
-              Archived categories ({{ archivedCategories().length }})
+              Archived categories
             </button>
 
             @if (archivedCategoriesVisible()) {
@@ -41,9 +41,6 @@
                   <div class="flex flex-wrap items-center justify-between gap-2">
                     <div>
                       <h2 class="text-lg font-semibold">Archived categories</h2>
-                      <p class="text-sm opacity-75">
-                        These categories are hidden from your active budget list.
-                      </p>
                     </div>
                     <span class="badge badge-outline">
                       {{ archivedCategories().length }}
@@ -74,7 +71,11 @@
                         </thead>
                         <tbody>
                           @for (category of archivedCategories(); track category.id) {
-                            <tr class="opacity-75">
+                            <tr
+                              class="cursor-pointer opacity-75 hover:opacity-100"
+                              (click)="openArchivedCategoryMenu($event, category)"
+                              (contextmenu)="openArchivedCategoryMenu($event, category)"
+                            >
                               <th scope="row" class="font-medium">
                                 <div class="flex flex-wrap items-center gap-2">
                                   <span>{{ category.name }}</span>
@@ -551,14 +552,25 @@
               </div>
 
               <div class="mt-4 flex justify-end gap-2">
-                <button
-                  class="btn btn-outline mr-auto"
-                  type="button"
-                  [disabled]="categoryActionPending()"
-                  (click)="archiveCategory()"
-                >
-                  Archive
-                </button>
+                @if (isEditingArchivedCategory()) {
+                  <button
+                    class="btn btn-outline mr-auto"
+                    type="button"
+                    [disabled]="categoryActionPending()"
+                    (click)="restoreCategory()"
+                  >
+                    Restore
+                  </button>
+                } @else {
+                  <button
+                    class="btn btn-outline mr-auto"
+                    type="button"
+                    [disabled]="categoryActionPending()"
+                    (click)="archiveCategory()"
+                  >
+                    Archive
+                  </button>
+                }
                 <button
                   class="btn btn-outline btn-error"
                   type="button"

@@ -148,8 +148,16 @@ export class BudgetsPageComponent implements OnInit, OnDestroy {
       this.categoryActionPending(),
   );
   protected readonly editingCategory = computed(
-    () => this.categories().find((category) => category.id === this.editingCategoryId()) ?? null,
+    () =>
+      this.categories().find((category) => category.id === this.editingCategoryId()) ??
+      this.archivedCategories().find((category) => category.id === this.editingCategoryId()) ??
+      null,
   );
+  protected readonly isEditingArchivedCategory = computed(() => {
+    const editingId = this.editingCategoryId();
+    if (editingId === null) return false;
+    return this.archivedCategories().some((category) => category.id === editingId);
+  });
   protected readonly deleteCategoryOptions = computed(() => {
     const editingCategoryId = this.editingCategoryId();
     if (editingCategoryId === null) {
@@ -307,6 +315,16 @@ export class BudgetsPageComponent implements OnInit, OnDestroy {
     this.categorySubmitError.set(null);
   }
 
+  protected openArchivedCategoryMenu(event: MouseEvent, category: CategoryResponse): void {
+    event.preventDefault();
+    this.editCategoryForm.reset({ name: category.name });
+    this.editCategoryPosition.set({ x: event.clientX, y: event.clientY });
+    this.editingCategoryId.set(category.id);
+    this.deleteCategoryConfirmationVisible.set(false);
+    this.deleteCategoryForm.reset({ replacementCategoryId: '' });
+    this.categorySubmitError.set(null);
+  }
+
   protected cancelEditingCategory(): void {
     this.editingCategoryId.set(null);
     this.editCategoryPosition.set(null);
@@ -355,6 +373,35 @@ export class BudgetsPageComponent implements OnInit, OnDestroy {
     } catch (error) {
       this.categorySubmitError.set(
         this.mapError(error, 'Could not archive the category right now.'),
+      );
+    } finally {
+      this.categoryActionPending.set(false);
+    }
+  }
+
+  protected async restoreCategory(): Promise<void> {
+    const budget = this.activeBudget();
+    const category = this.editingCategory();
+    if (budget === null || category === null || this.categoryActionPending()) {
+      return;
+    }
+
+    this.categoryActionPending.set(true);
+    this.categorySubmitError.set(null);
+
+    try {
+      await firstValueFrom(
+        this.budgetApiService.updateCategory(budget.id, category.id, {
+          is_archived: false,
+        }),
+      );
+
+      this.cancelEditingCategory();
+      await this.loadCategories(budget.id);
+      this.dataChanged.emit();
+    } catch (error) {
+      this.categorySubmitError.set(
+        this.mapError(error, 'Could not restore the category right now.'),
       );
     } finally {
       this.categoryActionPending.set(false);
@@ -508,6 +555,11 @@ export class BudgetsPageComponent implements OnInit, OnDestroy {
       (target instanceof HTMLElement &&
         target.closest('[data-category-context-target="true"]') !== null)
     ) {
+      return;
+    }
+
+    const archivedCategoriesDropdown = this.archivedCategoriesDropdown()?.nativeElement;
+    if (archivedCategoriesDropdown !== undefined && archivedCategoriesDropdown.contains(target)) {
       return;
     }
 
