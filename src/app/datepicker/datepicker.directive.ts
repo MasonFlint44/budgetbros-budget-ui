@@ -51,6 +51,16 @@ export class DatepickerDirective implements OnDestroy, ControlValueAccessor {
         this.pendingValue = null;
       }
 
+      let wasOpenOnMousedown = false;
+      this.el.nativeElement.addEventListener('mousedown', () => {
+        wasOpenOnMousedown = this.fp?.isOpen ?? false;
+      });
+      this.el.nativeElement.addEventListener('click', () => {
+        if (wasOpenOnMousedown) {
+          this.fp?.close();
+        }
+      });
+
       // Run after the current call stack so flatpickr has finished
       // appending the calendar to the DOM before we manipulate it.
       setTimeout(() => {

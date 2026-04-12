@@ -312,14 +312,14 @@
           </div>
         } @else {
           <div class="overflow-x-auto rounded-box border border-base-300">
-            <table class="table table-zebra w-full min-w-[1000px]">
+            <table class="table table-zebra table-fixed w-full min-w-[1000px]">
               <caption class="sr-only">
                 Transactions for {{ budget.name }}
               </caption>
               <thead>
                 <tr>
                   <th scope="col" class="w-[8rem]">Date</th>
-                  <th scope="col" class="w-[8rem]">Status</th>
+                  <th scope="col" class="w-[10rem]">Status</th>
                   <th scope="col">Account</th>
                   <th scope="col">Payee</th>
                   <th scope="col">Category</th>
@@ -343,8 +343,7 @@
                       <td>
                         <div
                           #editStatusDropdown
-                          class="dropdown block w-full min-w-[8rem]"
-                          [class.dropdown-open]="editStatusDropdownOpen()"
+                          class="relative block w-full"
                         >
                           <button
                             type="button"
@@ -368,23 +367,25 @@
                               <path d="m6 9 6 6 6-6" />
                             </svg>
                           </button>
-                          <ul class="dropdown-content menu z-20 mt-1 w-full rounded-box border border-base-content/20 bg-base-100 p-2 shadow">
-                            <li>
-                              <button type="button" (click)="selectEditStatus('pending')">
-                                <span class="badge badge-warning badge-sm">Pending</span>
-                              </button>
-                            </li>
-                            <li>
-                              <button type="button" (click)="selectEditStatus('cleared')">
-                                <span class="badge badge-success badge-sm">Cleared</span>
-                              </button>
-                            </li>
-                            <li>
-                              <button type="button" (click)="selectEditStatus('reconciled')">
-                                <span class="badge badge-info badge-sm">Reconciled</span>
-                              </button>
-                            </li>
-                          </ul>
+                          @if (editStatusDropdownOpen()) {
+                            <ul class="absolute left-0 top-full menu z-20 mt-1 w-full rounded-box border border-base-content/20 bg-base-100 p-2 shadow">
+                              <li>
+                                <button type="button" (click)="selectEditStatus('pending')">
+                                  <span class="badge badge-warning badge-sm">Pending</span>
+                                </button>
+                              </li>
+                              <li>
+                                <button type="button" (click)="selectEditStatus('cleared')">
+                                  <span class="badge badge-success badge-sm">Cleared</span>
+                                </button>
+                              </li>
+                              <li>
+                                <button type="button" (click)="selectEditStatus('reconciled')">
+                                  <span class="badge badge-info badge-sm">Reconciled</span>
+                                </button>
+                              </li>
+                            </ul>
+                          }
                         </div>
                       </td>
                       <td>

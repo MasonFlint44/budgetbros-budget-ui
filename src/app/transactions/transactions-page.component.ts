@@ -480,7 +480,11 @@ export class TransactionsPageComponent implements OnInit, OnDestroy {
       } else {
         const isInEditRow = target instanceof Element && target.closest('[data-edit-row]') !== null;
         const isInDeletePanel = deletePanel !== undefined && deletePanel.contains(target);
-        if (!isInEditRow && !isInDeletePanel) {
+        const isInDatepicker =
+          target instanceof Element &&
+          (target.closest('.flatpickr-calendar') !== null ||
+            target.closest('.fp-month__menu') !== null);
+        if (!isInEditRow && !isInDeletePanel && !isInDatepicker) {
           this.cancelEditing();
         }
       }
