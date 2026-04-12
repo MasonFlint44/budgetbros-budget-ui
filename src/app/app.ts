@@ -20,6 +20,7 @@ import {
 } from './api/budget-api.models';
 import { AuthService } from './auth/auth.service';
 import { BudgetsPageComponent } from './budgets/budgets-page.component';
+import { TransactionsPageComponent } from './transactions/transactions-page.component';
 import { MoneyCountdownRowComponent } from './money-countdown-row.component';
 
 type AppPage = 'dashboard' | 'budgets' | 'transactions' | 'goals' | 'reports';
@@ -63,7 +64,7 @@ const MIN_ACTIVITY_LOADING_MS = 1000;
   templateUrl: './app.html',
   styleUrl: './app.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [BudgetsPageComponent, MoneyCountdownRowComponent],
+  imports: [BudgetsPageComponent, TransactionsPageComponent, MoneyCountdownRowComponent],
   host: {
     '(document:click)': 'closeUserDropdownOnOutsideClick($event)',
     '(window:hashchange)': 'syncPageFromLocation()'

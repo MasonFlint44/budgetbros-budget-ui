@@ -238,7 +238,7 @@
       </nav>
     </header>
 
-    <main id="main-content" class="mx-auto flex w-full max-w-7xl flex-col gap-4 p-4 sm:p-6">
+    <main id="main-content" class="mx-auto flex w-full max-w-screen-2xl flex-col gap-4 p-4 sm:p-6">
       @switch (activePage()) {
         @case ('dashboard') {
           <section id="dashboard" class="rounded-box border border-base-300 bg-base-100 p-6 shadow-sm">
@@ -472,10 +472,7 @@
         }
 
         @case ('transactions') {
-          <section class="rounded-box border border-base-300 bg-base-100 p-6 shadow-sm">
-            <h1 class="text-2xl font-semibold">Transactions</h1>
-            <p class="mt-2 text-sm opacity-75">Transaction tools will live here.</p>
-          </section>
+          <app-transactions-page></app-transactions-page>
         }
 
         @case ('goals') {

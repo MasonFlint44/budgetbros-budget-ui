@@ -101,3 +101,206 @@ body {
   background: color-mix(in oklab, var(--color-primary) 62%, black);
   color: var(--color-primary-content);
 }
+
+/* ── Flatpickr theme overrides ──────────────────────────────────────────── */
+
+.flatpickr-calendar {
+  background: var(--color-base-100);
+  border: 1px solid color-mix(in oklab, var(--color-base-content) 20%, transparent);
+  border-radius: var(--radius-box);
+  box-shadow: 0 8px 24px oklch(0% 0 0 / 0.25);
+  color: var(--color-base-content);
+  font-family: inherit;
+}
+
+.flatpickr-calendar.arrowTop::before,
+.flatpickr-calendar.arrowTop::after {
+  border-bottom-color: color-mix(in oklab, var(--color-base-content) 20%, transparent);
+}
+
+.flatpickr-calendar.arrowBottom::before,
+.flatpickr-calendar.arrowBottom::after {
+  border-top-color: color-mix(in oklab, var(--color-base-content) 20%, transparent);
+}
+
+.flatpickr-months .flatpickr-month {
+  background: transparent;
+  color: var(--color-base-content);
+}
+
+.flatpickr-current-month {
+  display: flex !important;
+  align-items: stretch;
+  justify-content: center;
+  background: transparent;
+  color: var(--color-base-content);
+}
+
+.flatpickr-current-month input.cur-year {
+  color: var(--color-base-content);
+  font-weight: 600;
+}
+
+.flatpickr-current-month .numInputWrapper {
+  transition: background 0.1s;
+}
+
+.flatpickr-current-month .numInputWrapper:hover {
+  background: var(--color-base-200);
+}
+
+/* Custom month dropdown (replaces native <select>) */
+
+.fp-month {
+  transition: background 0.1s;
+}
+
+.fp-month:hover {
+  background: var(--color-base-200);
+}
+
+.fp-month__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2em;
+  height: 100%;
+  background: transparent;
+  border: none;
+  margin: 0;
+  padding: 0 0 0 0.5ch;
+  cursor: pointer;
+  color: var(--color-base-content);
+  font-weight: 600;
+  font-size: inherit;
+  font-family: inherit;
+  line-height: inherit;
+}
+
+.fp-month__chevron {
+  width: 0.65em;
+  height: 0.65em;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+.fp-month__menu {
+  position: fixed;
+  background: var(--color-base-100);
+  border: 1px solid color-mix(in oklab, var(--color-base-content) 20%, transparent);
+  border-radius: var(--radius-box);
+  box-shadow: 0 6px 20px oklch(0% 0 0 / 0.22);
+  z-index: 999999;
+  min-width: 9rem;
+  max-height: 16rem;
+  overflow-y: auto;
+  padding: 0.25rem;
+}
+
+.fp-month__option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.35rem 0.75rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-base-content);
+  font-size: 0.875rem;
+  font-family: inherit;
+  border-radius: var(--radius-field);
+  transition: background 0.1s;
+}
+
+.fp-month__option:hover {
+  background: var(--color-base-200);
+}
+
+.flatpickr-months .flatpickr-prev-month,
+.flatpickr-months .flatpickr-next-month {
+  color: var(--color-base-content);
+  fill: var(--color-base-content);
+}
+
+.flatpickr-months .flatpickr-prev-month:hover,
+.flatpickr-months .flatpickr-next-month:hover {
+  color: var(--color-primary);
+  fill: var(--color-primary);
+}
+
+.flatpickr-weekdays,
+span.flatpickr-weekday {
+  background: transparent;
+  color: var(--color-base-content);
+  opacity: 0.55;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.flatpickr-day {
+  border-radius: var(--radius-field);
+  color: var(--color-base-content);
+}
+
+.flatpickr-day:hover,
+.flatpickr-day.prevMonthDay:hover,
+.flatpickr-day.nextMonthDay:hover {
+  background: var(--color-base-200);
+  border-color: transparent;
+  color: var(--color-base-content);
+}
+
+.flatpickr-day.today {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.flatpickr-day.today:hover {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-primary-content);
+}
+
+.flatpickr-day.selected,
+.flatpickr-day.selected:hover {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-primary-content);
+  font-weight: 700;
+}
+
+.flatpickr-day.prevMonthDay,
+.flatpickr-day.nextMonthDay {
+  color: var(--color-base-content);
+  opacity: 0.3;
+}
+
+.flatpickr-day.disabled {
+  color: var(--color-base-content);
+  opacity: 0.2;
+}
+
+.flatpickr-current-month .numInputWrapper span.arrowUp::after {
+  border-bottom-color: var(--color-base-content);
+}
+
+.flatpickr-current-month .numInputWrapper span.arrowDown::after {
+  border-top-color: var(--color-base-content);
+}
+
+.flatpickr-time {
+  border-top: 1px solid color-mix(in oklab, var(--color-base-content) 20%, transparent);
+}
+
+.flatpickr-time input,
+.flatpickr-time .flatpickr-am-pm {
+  color: var(--color-base-content);
+  background: transparent;
+}
+
+.flatpickr-time input:hover,
+.flatpickr-time .flatpickr-am-pm:hover {
+  background: var(--color-base-200);
+}

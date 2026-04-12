@@ -1,0 +1,591 @@
+<section class="rounded-box border border-base-300 bg-base-100 p-6 shadow-sm">
+  <div class="flex flex-wrap items-start justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-2">
+        <h1 class="text-2xl font-semibold">Transactions</h1>
+        @if (pageLoadingIndicatorVisible()) {
+          <span
+            class="loading loading-dots loading-sm text-primary"
+            role="status"
+            aria-label="Loading transactions page"
+          ></span>
+        }
+      </div>
+    </div>
+
+    @if (hasBudgets()) {
+      <div
+        #createTransactionDropdown
+        class="dropdown dropdown-end"
+        [class.dropdown-open]="createTransactionFormVisible()"
+      >
+        <button
+          class="btn btn-primary"
+          type="button"
+          aria-label="Open add transaction form"
+          (click)="showCreateTransactionForm()"
+        >
+          Add transaction
+        </button>
+
+        <div
+          class="dropdown-content z-20 mt-3 w-[min(32rem,calc(100vw-2rem))] rounded-box border border-base-300 bg-base-100 p-4 shadow"
+        >
+          @if (createTransactionFormVisible()) {
+            @if (activeBudget(); as budget) {
+              @if (!hasAccounts()) {
+                <p class="text-sm opacity-80">
+                  This budget has no accounts yet. Add accounts on the Budgets page to record
+                  transactions.
+                </p>
+              } @else {
+                <form [formGroup]="transactionForm" (ngSubmit)="createTransaction()">
+                  <div>
+                    <h2 class="text-lg font-semibold">Add transaction</h2>
+                    <p class="text-sm opacity-75">Record a transaction in {{ budget.name }}.</p>
+                  </div>
+
+                  <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                    <div class="sm:col-span-2">
+                      <label class="label" for="tx-account">
+                        <span class="label-text font-medium">Account</span>
+                      </label>
+                      <select
+                        id="tx-account"
+                        class="select select-bordered w-full"
+                        formControlName="accountId"
+                      >
+                        <option value="">Select an account</option>
+                        @for (account of accounts(); track account.id) {
+                          <option [value]="account.id">{{ account.name }}</option>
+                        }
+                      </select>
+                      @if (
+                        transactionForm.controls.accountId.invalid &&
+                        transactionForm.controls.accountId.touched
+                      ) {
+                        <p class="mt-1 text-sm text-error">Select an account.</p>
+                      }
+                    </div>
+
+                    <div>
+                      <label class="label" for="tx-amount">
+                        <span class="label-text font-medium">Amount</span>
+                      </label>
+                      <input
+                        id="tx-amount"
+                        class="input input-bordered w-full"
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        placeholder="0.00"
+                        formControlName="amount"
+                      />
+                      @if (
+                        transactionForm.controls.amount.invalid &&
+                        transactionForm.controls.amount.touched
+                      ) {
+                        <p class="mt-1 text-sm text-error">Enter an amount greater than zero.</p>
+                      }
+                    </div>
+
+                    <div>
+                      <label class="label" for="tx-direction">
+                        <span class="label-text font-medium">Direction</span>
+                      </label>
+                      <select
+                        id="tx-direction"
+                        class="select select-bordered w-full"
+                        formControlName="isOutflow"
+                      >
+                        <option [ngValue]="true">Outflow (expense)</option>
+                        <option [ngValue]="false">Inflow (income)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label class="label" for="tx-date">
+                        <span class="label-text font-medium">Date</span>
+                      </label>
+                      <input
+                        id="tx-date"
+                        class="input input-bordered w-full"
+                        type="text"
+                        placeholder="YYYY-MM-DD"
+                        appDatepicker
+                        formControlName="postedAt"
+                      />
+                    </div>
+
+                    <div>
+                      <label class="label" for="tx-status-btn">
+                        <span class="label-text font-medium">Status</span>
+                      </label>
+                      <div
+                        #createStatusDropdown
+                        class="dropdown block w-full min-w-[8rem]"
+                        [class.dropdown-open]="createStatusDropdownOpen()"
+                      >
+                        <button
+                          id="tx-status-btn"
+                          type="button"
+                          class="flex h-12 w-full cursor-pointer items-center justify-between rounded-field border border-base-content/20 bg-base-100 px-4 text-sm"
+                          (click)="toggleCreateStatusDropdown()"
+                        >
+                          <span [class]="statusBadgeClass(createFormStatus())">{{
+                            statusLabel(createFormStatus())
+                          }}</span>
+                          <svg
+                            aria-hidden="true"
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            class="size-4 opacity-50"
+                          >
+                            <path d="m6 9 6 6 6-6" />
+                          </svg>
+                        </button>
+                        <ul class="dropdown-content menu z-20 mt-1 w-full rounded-box border border-base-content/20 bg-base-100 p-2 shadow">
+                          <li>
+                            <button type="button" (click)="selectCreateStatus('pending')">
+                              <span class="badge badge-warning badge-sm">Pending</span>
+                            </button>
+                          </li>
+                          <li>
+                            <button type="button" (click)="selectCreateStatus('cleared')">
+                              <span class="badge badge-success badge-sm">Cleared</span>
+                            </button>
+                          </li>
+                          <li>
+                            <button type="button" (click)="selectCreateStatus('reconciled')">
+                              <span class="badge badge-info badge-sm">Reconciled</span>
+                            </button>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div class="sm:col-span-2">
+                      <label class="label" for="tx-memo">
+                        <span class="label-text font-medium">Memo</span>
+                        <span class="label-text-alt opacity-60">Optional</span>
+                      </label>
+                      <input
+                        id="tx-memo"
+                        class="input input-bordered w-full"
+                        type="text"
+                        placeholder="What was this for?"
+                        formControlName="memo"
+                      />
+                    </div>
+
+                    <div class="sm:col-span-2">
+                      <label class="label" for="tx-notes">
+                        <span class="label-text font-medium">Notes</span>
+                        <span class="label-text-alt opacity-60">Optional</span>
+                      </label>
+                      <input
+                        id="tx-notes"
+                        class="input input-bordered w-full"
+                        type="text"
+                        placeholder="Additional notes"
+                        formControlName="notes"
+                      />
+                    </div>
+                  </div>
+
+                  @if (transactionSubmitError() !== null) {
+                    <p class="alert alert-error mt-4 text-sm" role="alert">
+                      {{ transactionSubmitError() }}
+                    </p>
+                  }
+
+                  <div class="mt-4 flex justify-end gap-2">
+                    <button
+                      class="btn btn-ghost"
+                      type="button"
+                      (click)="hideCreateTransactionForm()"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      class="btn btn-primary"
+                      type="submit"
+                      [disabled]="transactionSubmitting()"
+                    >
+                      {{ transactionSubmitting() ? 'Adding...' : 'Add transaction' }}
+                    </button>
+                  </div>
+                </form>
+              }
+            }
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  @if (budgetsError() !== null) {
+    <p class="alert alert-error mt-6 text-sm" role="alert">{{ budgetsError() }}</p>
+  }
+
+  @if (budgetsLoading()) {
+    <div class="mt-6 rounded-box border border-base-300 bg-base-200/50 p-6" aria-live="polite">
+      <p class="text-sm">Loading your budgets.</p>
+    </div>
+  } @else if (showNoBudgetsState()) {
+    <div class="mt-6 rounded-box border border-dashed border-base-300 bg-base-200/40 p-6">
+      <h2 class="text-lg font-semibold">No budgets yet</h2>
+      <p class="mt-2 text-sm opacity-80">
+        Create a budget on the Budgets page to start recording transactions.
+      </p>
+    </div>
+  } @else {
+    @if (activeBudget(); as budget) {
+      <div class="mt-6 space-y-6">
+        <div class="max-w-md">
+          <div
+            #budgetSwitcherDropdown
+            class="dropdown w-full"
+            [class.dropdown-open]="budgetSwitcherOpen()"
+          >
+            <button
+              class="btn h-auto min-h-0 w-full justify-between rounded-box border border-base-300 bg-base-200/40 px-4 py-3 text-left normal-case"
+              type="button"
+              aria-haspopup="menu"
+              [attr.aria-expanded]="budgetSwitcherOpen()"
+              aria-label="Choose a budget"
+              (click)="toggleBudgetSwitcher()"
+            >
+              <span class="min-w-0">
+                <span class="block truncate font-semibold">{{ budget.name }}</span>
+                <span class="block text-sm opacity-70">Currency: {{ budget.base_currency_code }}</span>
+              </span>
+              <span aria-hidden="true" class="text-lg leading-none opacity-70">▾</span>
+            </button>
+
+            @if (budgetSwitcherOpen()) {
+              <div class="absolute left-0 right-0 top-full z-20 mt-3">
+                <div class="rounded-box border border-base-300 bg-base-100 p-2 shadow">
+                  <ul class="menu w-full p-0" role="menu" aria-label="Budgets">
+                    @for (option of budgets(); track option.id) {
+                      <li role="none">
+                        <button
+                          class="justify-between"
+                          type="button"
+                          role="menuitem"
+                          [class.active]="option.id === budget.id"
+                          [attr.aria-current]="option.id === budget.id ? 'true' : null"
+                          (click)="selectBudget(option.id)"
+                        >
+                          <span class="truncate">{{ option.name }}</span>
+                          <span class="text-xs opacity-70">{{ option.base_currency_code }}</span>
+                        </button>
+                      </li>
+                    }
+                  </ul>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        @if (transactionsError() !== null) {
+          <p class="alert alert-error text-sm" role="alert">{{ transactionsError() }}</p>
+        }
+
+        @if (showNoTransactionsState()) {
+          <div class="rounded-box border border-dashed border-base-300 bg-base-200/40 p-6">
+            <h2 class="text-lg font-semibold">No transactions yet</h2>
+            <p class="mt-2 text-sm opacity-80">
+              @if (!hasAccounts()) {
+                This budget has no accounts yet. Add accounts on the Budgets page, then use the
+                Add transaction button to record your first transaction.
+              } @else {
+                Use the Add transaction button above to record your first transaction.
+              }
+            </p>
+          </div>
+        } @else {
+          <div class="overflow-x-auto rounded-box border border-base-300">
+            <table class="table table-zebra w-full min-w-[1000px]">
+              <caption class="sr-only">
+                Transactions for {{ budget.name }}
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col" class="w-[8rem]">Date</th>
+                  <th scope="col" class="w-[8rem]">Status</th>
+                  <th scope="col">Account</th>
+                  <th scope="col">Payee</th>
+                  <th scope="col">Category</th>
+                  <th scope="col" class="w-[10rem]">Memo</th>
+                  <th scope="col" class="w-[13rem] text-right">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (transaction of sortedTransactions(); track transaction.id) {
+                  @if (editingTransactionId() === transaction.id) {
+                    <tr data-edit-row class="bg-base-200/60 [&>td]:border-b-0">
+                      <td>
+                        <input
+                          type="text"
+                          class="input input-bordered input-sm w-full"
+                          placeholder="YYYY-MM-DD"
+                          appDatepicker
+                          [formControl]="editTransactionForm.controls.postedAt"
+                        />
+                      </td>
+                      <td>
+                        <div
+                          #editStatusDropdown
+                          class="dropdown block w-full min-w-[8rem]"
+                          [class.dropdown-open]="editStatusDropdownOpen()"
+                        >
+                          <button
+                            type="button"
+                            class="flex h-8 w-full cursor-pointer items-center justify-between rounded-field border border-base-content/20 bg-base-100 px-3 text-sm"
+                            (click)="toggleEditStatusDropdown()"
+                          >
+                            <span [class]="statusBadgeClass(editFormStatus())">{{
+                              statusLabel(editFormStatus())
+                            }}</span>
+                            <svg
+                              aria-hidden="true"
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              class="size-3.5 opacity-50"
+                            >
+                              <path d="m6 9 6 6 6-6" />
+                            </svg>
+                          </button>
+                          <ul class="dropdown-content menu z-20 mt-1 w-full rounded-box border border-base-content/20 bg-base-100 p-2 shadow">
+                            <li>
+                              <button type="button" (click)="selectEditStatus('pending')">
+                                <span class="badge badge-warning badge-sm">Pending</span>
+                              </button>
+                            </li>
+                            <li>
+                              <button type="button" (click)="selectEditStatus('cleared')">
+                                <span class="badge badge-success badge-sm">Cleared</span>
+                              </button>
+                            </li>
+                            <li>
+                              <button type="button" (click)="selectEditStatus('reconciled')">
+                                <span class="badge badge-info badge-sm">Reconciled</span>
+                              </button>
+                            </li>
+                          </ul>
+                        </div>
+                      </td>
+                      <td>
+                        <select
+                          class="select select-bordered select-sm w-full"
+                          [formControl]="editTransactionForm.controls.accountId"
+                        >
+                          <option value="">Account</option>
+                          @for (account of accounts(); track account.id) {
+                            <option [value]="account.id">{{ account.name }}</option>
+                          }
+                        </select>
+                      </td>
+                      <td>
+                        <select
+                          class="select select-bordered select-sm w-full"
+                          [formControl]="editTransactionForm.controls.payeeId"
+                        >
+                          <option value="">—</option>
+                          @for (payee of payees(); track payee.id) {
+                            <option [value]="payee.id">{{ payee.name }}</option>
+                          }
+                        </select>
+                      </td>
+                      <td>
+                        <select
+                          class="select select-bordered select-sm w-full"
+                          [formControl]="editTransactionForm.controls.categoryId"
+                        >
+                          <option value="">—</option>
+                          @for (category of categories(); track category.id) {
+                            <option [value]="category.id">{{ category.name }}</option>
+                          }
+                        </select>
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          class="input input-bordered input-sm w-full"
+                          [formControl]="editTransactionForm.controls.memo"
+                        />
+                      </td>
+                      <td>
+                        <div class="flex items-center justify-end gap-1">
+                          <select
+                            class="select select-bordered select-sm w-16"
+                            [class.text-error]="editTransactionForm.controls.isOutflow.value"
+                            [class.text-success]="!editTransactionForm.controls.isOutflow.value"
+                            aria-label="Direction"
+                            [formControl]="editTransactionForm.controls.isOutflow"
+                          >
+                            <option [ngValue]="true" class="text-error">−</option>
+                            <option [ngValue]="false" class="text-success">+</option>
+                          </select>
+                          <input
+                            type="text"
+                            inputmode="decimal"
+                            class="input input-bordered input-sm w-full text-right font-mono"
+                            [class.text-error]="editTransactionForm.controls.isOutflow.value"
+                            [class.text-success]="!editTransactionForm.controls.isOutflow.value"
+                            [formControl]="editTransactionForm.controls.amount"
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                    <tr data-edit-row class="bg-base-200/60">
+                      <td colspan="7" class="pb-2 pt-0">
+                        <div class="flex items-center justify-end gap-2">
+                          <div #deleteDropdown>
+                            <button
+                              class="btn btn-outline btn-error btn-sm"
+                              type="button"
+                              [disabled]="transactionActionPending()"
+                              (click)="showDeleteConfirmation(editingTransactionId()!, $event.currentTarget)"
+                            >
+                              <svg
+                                aria-hidden="true"
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="1.75"
+                                class="size-4"
+                              >
+                                <path d="M3 6h18" />
+                                <path d="M8 6V4h8v2" />
+                                <path d="M19 6l-1 14H6L5 6" />
+                                <path d="M10 11v6" />
+                                <path d="M14 11v6" />
+                              </svg>
+                              <span>Delete</span>
+                            </button>
+                          </div>
+                          <div class="ml-3 border-l border-base-300 pl-3 flex items-center gap-2">
+                            <button
+                              class="btn btn-ghost btn-sm min-w-[4.5rem]"
+                              type="button"
+                              [disabled]="transactionActionPending()"
+                              (click)="cancelEditing()"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              class="btn btn-primary btn-sm min-w-[4.5rem]"
+                              type="button"
+                              [disabled]="transactionActionPending()"
+                              (click)="saveTransactionEdit()"
+                            >
+                              {{ transactionActionPending() ? 'Saving…' : 'Save' }}
+                            </button>
+                          </div>
+                        </div>
+                        @if (editTransactionSubmitError() !== null) {
+                          <p class="mt-1 text-sm text-error" role="alert">
+                            {{ editTransactionSubmitError() }}
+                          </p>
+                        }
+                      </td>
+                    </tr>
+                  } @else {
+                    <tr class="cursor-pointer" (click)="startEditing(transaction)">
+                      <td class="whitespace-nowrap text-sm">
+                        {{
+                          formatDate(transaction.posted_at ?? transaction.created_at)
+                        }}
+                      </td>
+                      <td>
+                        <span [class]="statusBadgeClass(transaction.status)">
+                          {{ statusLabel(transaction.status) }}
+                        </span>
+                      </td>
+                      <td class="text-sm">
+                        {{ accountName(primaryLine(transaction)?.account_id) }}
+                      </td>
+                      <td class="text-sm">
+                        {{ payeeName(primaryLine(transaction)?.payee_id) }}
+                      </td>
+                      <td class="text-sm opacity-70">
+                        {{ categoryName(primaryLine(transaction)?.category_id) }}
+                      </td>
+                      <td class="max-w-[12rem] truncate text-sm opacity-70">
+                        {{ primaryLine(transaction)?.memo ?? '—' }}
+                      </td>
+                      <td class="text-right font-mono tabular-nums text-sm">
+                        <span
+                          [class.text-success]="!isOutflow(transaction)"
+                          [class.text-error]="isOutflow(transaction)"
+                        >
+                          {{ isOutflow(transaction) ? '−' : '+' }}{{
+                            formatCurrencyAmount(
+                              transactionAmountMinor(transaction),
+                              budget.base_currency_code
+                            )
+                          }}
+                        </span>
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    }
+  }
+</section>
+
+@if (deleteConfirmationTransactionId() !== null && deleteDropdownCoords(); as coords) {
+  <div
+    #deleteConfirmationPanel
+    class="fixed z-50 w-64 rounded-box border border-base-300 bg-base-100 p-4 shadow-lg"
+    [style.top.px]="coords.top"
+    [style.bottom.px]="coords.bottom"
+    [style.right.px]="coords.right"
+  >
+    <p class="text-sm font-medium">Delete this transaction?</p>
+    <p class="mt-1 text-xs opacity-70">This action cannot be undone.</p>
+    @if (deleteError() !== null) {
+      <p class="mt-2 text-xs text-error" role="alert">{{ deleteError() }}</p>
+    }
+    <div class="mt-3 flex justify-end gap-2">
+      <button
+        class="btn btn-ghost btn-sm"
+        type="button"
+        [disabled]="transactionActionPending()"
+        (click)="hideDeleteConfirmation()"
+      >
+        Cancel
+      </button>
+      <button
+        class="btn btn-error btn-sm"
+        type="button"
+        [disabled]="transactionActionPending()"
+        (click)="confirmDelete()"
+      >
+        {{ transactionActionPending() ? 'Deleting…' : 'Delete' }}
+      </button>
+    </div>
+  </div>
+}
+
